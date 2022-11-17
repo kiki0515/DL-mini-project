@@ -66,7 +66,7 @@ class EarlyStopping(Callbacks):
                  save_final_model :bool=False,
                  patience: int=5, 
                  mode :str="max", 
-                 threshold: float=0.01):
+                 threshold: float=0.1):
         super().__init__(logger, output_dir, save_final_model)
 
         self.patience = patience
