@@ -32,7 +32,7 @@ class Callbacks:
         '''
         save new best model
         '''
-        self.logger.log_message(f"Saving new best-model with F-Score: {self.best_score:.4f}")
+        self.logger.log_message(f"Saving new best-model with accuracy: {self.best_score:.4f}")
         torch.save(model.state_dict(), os.path.join(self.output_dir, "best-model.pt"))
 
     def exit_training(self, model):
