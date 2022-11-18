@@ -20,7 +20,7 @@ def get_configs():
     }
 
     optimizer_params = {
-        "lr": 0.001,
+        "lr": 0.01,
         "type": "AdamW",
         "kwargs": {
             "weight_decay": 0.1,
