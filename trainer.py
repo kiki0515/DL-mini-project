@@ -158,7 +158,7 @@ class Trainer:
         start_time = time.time()
         
         with torch.no_grad():
-            for inputs, targets in tqdm(self.train_dataloader, desc="Evaluate on Testset"):
+            for inputs, targets in tqdm(self.test_dataloader, desc="Evaluate on Testset"):
                 inputs, targets = inputs.to(self.device), targets.to(self.device)
                 loss, preds = self.eval_one_step(inputs, targets)
                 test_loss += loss
