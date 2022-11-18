@@ -15,12 +15,12 @@ def get_configs():
     }
 
     callback_params = {
-        "patience": 3,
+        "patience": 5,
         "save_final_model": True,
     }
 
     optimizer_params = {
-        "lr": 0.01,
+        "lr": 0.001,
         "type": "AdamW",
         "kwargs": {
             "weight_decay": 0.1,
