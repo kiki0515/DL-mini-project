@@ -2,6 +2,7 @@ import os
 import torch
 import time
 from tqdm import tqdm
+import numpy as np
 
 from utils.utils import get_cifar10
 from utils.logger import Logger
@@ -33,12 +34,16 @@ class Trainer:
         self.model = model
         # print layer summary
         prev_layer_name = ""
+        total_params = 0
         for name, param in self.model.named_parameters():
             layer_name = name.split(".")[0]
             if layer_name != prev_layer_name:
                 prev_layer_name = layer_name
                 self.logger.log_block("{:<70} {:<30} {:<30} {:<30}".format('Name','Weight Shape','Total Parameters', 'Trainable'))
             self.logger.log_message("{:<70} {:<30} {:<30} {:<30}".format(name, str(param.data.shape), param.data.numel(), param.requires_grad))
+            total_params += np.prod(param.data.shape)
+        self.logger.log_block(f"Total Number of Paramters: {total_params}")
+        self.logger.log_line()
 
         # init dataloaders
         self.train_dataloader, self.test_dataloader = get_cifar10(
