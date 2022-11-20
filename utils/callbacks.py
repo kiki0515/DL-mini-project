@@ -44,7 +44,6 @@ class Callbacks:
             self.logger.log_message("Saving model ...")
             torch.save(model.state_dict(), os.path.join(self.output_dir, "final-model.pt"))
             self.logger.log_message("Done.")
-        exit(1)
 
 
 class EarlyStopping(Callbacks):
@@ -84,12 +83,15 @@ class EarlyStopping(Callbacks):
             self.best_score = score
             self.num_bad_epoch = 0
             self.save_checkpoint(model)
+            return True
         else:
             self.num_bad_epoch += 1
             self.logger.log_new_line()
             self.logger.log_message(f"Bad Epoch. Total num bad epoch: {self.num_bad_epoch}")
             if self.num_bad_epoch >= self.patience:
                 self.exit_training(model)
+                return False
+            return True
 
     def save_epoch_checkpoint(self, model):
         self.logger.log_new_line()

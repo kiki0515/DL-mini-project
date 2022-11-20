@@ -46,18 +46,21 @@ class Trainer:
         self.logger.log_line()
 
         # init dataloaders
-        self.train_dataloader, self.test_dataloader = get_cifar10(
+        self.train_dataloader, self.dev_dataloader, self.dev_dataloader = get_cifar10(
             train_bs = dataset_params["train_bs"],
             test_bs = dataset_params["test_bs"],
             transform_train = transform_train,
             transform_test = transform_test
         )
         self.total_train_batch = len(self.train_dataloader)
-        self.total_test_batch = len(self.test_dataloader)
+        self.total_test_batch = len(self.dev_dataloader)
+        self.total_dev_batch = len(self.dev_dataloader)
         self.ten_percent_train_batch = self.total_train_batch // 10 # use to log step loss
         self.logger.log_block(f"Training Dataset Size: {len(self.train_dataloader.dataset)}")
         self.logger.log_message(f"Training Dataset Total Batch#: {self.total_train_batch}")
-        self.logger.log_message(f"Test Dataset Size: {len(self.test_dataloader.dataset)}")
+        self.logger.log_block(f"Dev Dataset Size: {len(self.dev_dataloader.dataset)}")
+        self.logger.log_message(f"Dev Dataset Total Batch#: {self.total_dev_batch}")
+        self.logger.log_message(f"Test Dataset Size: {len(self.dev_dataloader.dataset)}")
         self.logger.log_message(f"Test Dataset Total Batch#: {self.total_test_batch}")
 
         # init callback [early stopping]
@@ -115,7 +118,7 @@ class Trainer:
             self.eval_one_epoch()
 
         self.logger.log_block(f"Max epoch reached. Best f1-score: {self.callbacks.best_score:.4f}")
-        exit(1)
+        self.eval_best_model_on_testdataset()
 
     def train_one_epoch(self):
         self.model.train()
@@ -163,6 +166,39 @@ class Trainer:
         start_time = time.time()
         
         with torch.no_grad():
+            for inputs, targets in tqdm(self.dev_dataloader, desc="Evaluate on Devtset"):
+                inputs, targets = inputs.to(self.device), targets.to(self.device)
+                loss, preds = self.eval_one_step(inputs, targets)
+                test_loss += loss
+                total += targets.size(0)
+                correct += preds.eq(targets).sum().item()
+        
+        end_time = time.time()
+        test_acc = correct/total*100
+        avg_loss = test_loss/self.total_test_batch
+        epoch_time = (end_time-start_time)/60
+        self.logger.log_message(f"Eval Devset: Epoch #{self.cur_epoch}: Average Loss {avg_loss:.5f} - Epoch Acc: {test_acc:.5f} - Epoch Testing Time: {epoch_time:.2} min(s)")
+
+        # saving best model and early stopping
+        if not self.callbacks(self.model, test_acc):
+            self.eval_best_model_on_testdataset()
+
+    def eval_one_step(self, inputs, targets):
+        outputs = self.model(inputs)
+        loss = self.criterion(outputs, targets)
+        _, preds = outputs.max(1)
+
+        return loss.item(), preds
+
+    def eval_best_model_on_testdataset(self):
+        self.model.load_state_dict(torch.load(os.path.join(self.output_dir, "best-model.pt")))
+        self.model.eval()
+        test_loss = 0
+        correct = 0
+        total = 0
+        start_time = time.time()
+        
+        with torch.no_grad():
             for inputs, targets in tqdm(self.test_dataloader, desc="Evaluate on Testset"):
                 inputs, targets = inputs.to(self.device), targets.to(self.device)
                 loss, preds = self.eval_one_step(inputs, targets)
@@ -174,12 +210,4 @@ class Trainer:
         test_acc = correct/total*100
         avg_loss = test_loss/self.total_test_batch
         epoch_time = (end_time-start_time)/60
-        self.logger.log_message(f"Eval Testset: Epoch #{self.cur_epoch}: Average Loss {avg_loss:.5f} - Epoch Acc: {test_acc:.5f} - Epoch Training Time: {epoch_time:.2} min(s)")
-        self.callbacks(self.model, test_acc) # saving best model and early stopping
-
-    def eval_one_step(self, inputs, targets):
-        outputs = self.model(inputs)
-        loss = self.criterion(outputs, targets)
-        _, preds = outputs.max(1)
-
-        return loss.item(), preds
+        self.logger.log_message(f"Test Devset: Epoch #{self.cur_epoch}: Average Loss {avg_loss:.5f} - Epoch Acc: {test_acc:.5f} - Epoch Testing Time: {epoch_time:.2} min(s)")
