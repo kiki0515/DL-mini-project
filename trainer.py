@@ -46,21 +46,21 @@ class Trainer:
         self.logger.log_line()
 
         # init dataloaders
-        self.train_dataloader, self.dev_dataloader, self.dev_dataloader = get_cifar10(
+        self.train_dataloader, self.dev_dataloader, self.test_dataloader = get_cifar10(
             train_bs = dataset_params["train_bs"],
             test_bs = dataset_params["test_bs"],
             transform_train = transform_train,
             transform_test = transform_test
         )
         self.total_train_batch = len(self.train_dataloader)
-        self.total_test_batch = len(self.dev_dataloader)
+        self.total_test_batch = len(self.test_dataloader)
         self.total_dev_batch = len(self.dev_dataloader)
         self.ten_percent_train_batch = self.total_train_batch // 10 # use to log step loss
         self.logger.log_block(f"Training Dataset Size: {len(self.train_dataloader.dataset)}")
         self.logger.log_message(f"Training Dataset Total Batch#: {self.total_train_batch}")
         self.logger.log_block(f"Dev Dataset Size: {len(self.dev_dataloader.dataset)}")
         self.logger.log_message(f"Dev Dataset Total Batch#: {self.total_dev_batch}")
-        self.logger.log_message(f"Test Dataset Size: {len(self.dev_dataloader.dataset)}")
+        self.logger.log_message(f"Test Dataset Size: {len(self.test_dataloader.dataset)}")
         self.logger.log_message(f"Test Dataset Total Batch#: {self.total_test_batch}")
 
         # init callback [early stopping]
