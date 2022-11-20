@@ -119,6 +119,7 @@ class Trainer:
 
         self.logger.log_block(f"Max epoch reached. Best f1-score: {self.callbacks.best_score:.4f}")
         self.eval_best_model_on_testdataset()
+        exit(1)
 
     def train_one_epoch(self):
         self.model.train()
@@ -182,6 +183,7 @@ class Trainer:
         # saving best model and early stopping
         if not self.callbacks(self.model, test_acc):
             self.eval_best_model_on_testdataset()
+            exit(1)
 
     def eval_one_step(self, inputs, targets):
         outputs = self.model(inputs)
